@@ -3,8 +3,6 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signUp, signInAndGetProfile, ProfileRole } from '../../lib/auth';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 
 const ROLE_ROUTES: Record<string, string> = {
   student: '/academy/portal/student',
@@ -51,7 +49,6 @@ export default function PortalLogin() {
 
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
-      <Header />
       <section className="max-w-md mx-auto px-6 py-16">
         <div className="text-amber-600 text-xs font-mono uppercase tracking-widest text-center mb-2">TUMN Academy Hub</div>
         <h1 className="text-3xl font-bold text-center mb-6">Sign in to your portal</h1>
@@ -114,7 +111,6 @@ export default function PortalLogin() {
           )}
         </div>
       </section>
-      <Footer />
     </div>
   );
 }

@@ -8,8 +8,6 @@
 // The real React form below still does the actual submitting at runtime.
 
 import { useState, FormEvent } from 'react';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 
 const FOUNDING_SEATS_TOTAL = 10;
 const FOUNDING_SEATS_TAKEN = 3; // update as spots fill
@@ -40,7 +38,6 @@ export default function AcademyEnroll() {
 
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
-      <Header />
 
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-10">
         <div className="text-amber-600 text-xs font-mono uppercase tracking-widest mb-4">Founding Cohort Enrollment</div>
@@ -183,7 +180,6 @@ export default function AcademyEnroll() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }

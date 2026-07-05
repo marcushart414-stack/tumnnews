@@ -1,17 +1,14 @@
 // src/pages/academy/AcademyOverview.tsx
 //
-// Ported from the standalone static site. Uses your existing Header/Footer
-// components — adjust the import paths below to match your actual file
-// locations if different.
+// Ported from the standalone static site. Header/Footer are NOT imported
+// here — your App.tsx already wraps every route in a global Header/Footer,
+// so this component only renders its own page content.
 
 import { Link } from 'react-router-dom';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 
 export default function AcademyOverview() {
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
-      <Header />
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-20 pb-14 grid md:grid-cols-2 gap-12 items-center">
@@ -114,7 +111,6 @@ export default function AcademyOverview() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }

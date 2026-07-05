@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { signOut } from '../../lib/auth';
 import { useRequireRole } from '../../lib/useRequireRole';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 
 interface Resource { id: number; tier: string; category: string; title: string; description: string; file_url: string | null; }
 
@@ -31,7 +29,6 @@ export default function PortalOrganization() {
 
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
-      <Header />
       <section className="max-w-6xl mx-auto px-6 py-14">
         <div className="flex justify-between items-start flex-wrap gap-4 mb-10">
           <div>
@@ -75,7 +72,6 @@ export default function PortalOrganization() {
           </a>
         </div>
       </section>
-      <Footer />
     </div>
   );
 }

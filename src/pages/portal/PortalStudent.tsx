@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { signOut } from '../../lib/auth';
 import { useRequireRole } from '../../lib/useRequireRole';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 
 interface Assignment { id: number; week_number: number; title: string; description: string; }
 interface Submission { id: number; assignment_id: number; status: string; }
@@ -39,7 +37,6 @@ export default function PortalStudent() {
 
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
-      <Header />
       <section className="max-w-6xl mx-auto px-6 py-14">
         <div className="flex justify-between items-start flex-wrap gap-4 mb-10">
           <div>
@@ -85,7 +82,6 @@ export default function PortalStudent() {
           ))}
         </div>
       </section>
-      <Footer />
     </div>
   );
 }
