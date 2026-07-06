@@ -1,5 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 import type { User } from '@supabase/supabase-js';
 
 const categories = ['Faith', 'Leadership', 'Trauma', 'Culture', 'Business', 'Mental Health', 'Politics', 'Entertainment'];
@@ -13,11 +15,18 @@ function slugify(title: string) {
 }
 
 const SubmitArticle = () => {
+  useSEO('Submit an Article', 'Submit a guest article to Transform U Media Network for editorial review.');
+  const [searchParams] = useSearchParams();
+  const draftIdParam = searchParams.get('draft');
+
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftId, setDraftId] = useState<number | null>(null);
 
   const [form, setForm] = useState({
     first_name: '', last_name: '', bio: '', website: '',
@@ -29,12 +38,86 @@ const SubmitArticle = () => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
+
+      // If editing an existing draft, load it (only if it belongs to this user).
+      if (draftIdParam && data.user) {
+        const { data: draft } = await supabase
+          .from('articles')
+          .select('*')
+          .eq('id', draftIdParam)
+          .eq('author_email', data.user.email)
+          .eq('status', 'draft')
+          .single();
+
+        if (draft) {
+          setDraftId(draft.id);
+          const [first, ...rest] = (draft.author_name || '').split(' ');
+          setForm({
+            first_name: first || '',
+            last_name: rest.join(' ') || '',
+            bio: draft.author_bio || '',
+            website: draft.author_website || '',
+            title: draft.title || '',
+            category: draft.category || '',
+            tags: (draft.tags || []).join(', '),
+            summary: draft.excerpt || '',
+            content: draft.content || '',
+            featured_image: draft.featured_image || '',
+            youtube_url: draft.youtube_url || '',
+            podcast_url: draft.podcast_url || '',
+            agree: false,
+          });
+        }
+      }
       setCheckingAuth(false);
     })();
-  }, []);
+  }, [draftIdParam]);
 
   function update<K extends keyof typeof form>(field: K, value: typeof form[K]) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function buildRecord(status: 'draft' | 'pending') {
+    return {
+      author_email: user!.email,
+      author_name: `${form.first_name} ${form.last_name}`.trim(),
+      author_bio: form.bio || null,
+      author_website: form.website || null,
+      title: form.title || '(untitled draft)',
+      excerpt: form.summary,
+      content: form.content,
+      category: form.category || null,
+      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
+      featured_image: form.featured_image || null,
+      youtube_url: form.youtube_url || null,
+      podcast_url: form.podcast_url || null,
+      is_podcast_article: Boolean(form.youtube_url || form.podcast_url),
+      status,
+      section: 'newsroom' as const,
+    };
+  }
+
+  async function handleSaveDraft() {
+    if (!user) return;
+    setError(null);
+    setSavingDraft(true);
+
+    if (draftId) {
+      const { error: updateError } = await supabase.from('articles').update(buildRecord('draft')).eq('id', draftId);
+      setSavingDraft(false);
+      if (updateError) { setError(updateError.message); return; }
+    } else {
+      const { data, error: insertError } = await supabase
+        .from('articles')
+        .insert({ ...buildRecord('draft'), slug: slugify(form.title || 'draft') })
+        .select('id')
+        .single();
+      setSavingDraft(false);
+      if (insertError) { setError(insertError.message); return; }
+      setDraftId(data.id); // subsequent saves update this same row instead of creating duplicates
+    }
+    setDraftSaved(true);
+    setTimeout(() => setDraftSaved(false), 3000);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -43,28 +126,14 @@ const SubmitArticle = () => {
     setError(null);
     setSaving(true);
 
-    const { error: insertError } = await supabase.from('articles').insert({
-      author_email: user.email,
-      author_name: `${form.first_name} ${form.last_name}`.trim(),
-      author_bio: form.bio || null,
-      author_website: form.website || null,
-      title: form.title,
-      slug: slugify(form.title),
-      excerpt: form.summary,
-      content: form.content,
-      category: form.category,
-      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
-      featured_image: form.featured_image || null,
-      youtube_url: form.youtube_url || null,
-      podcast_url: form.podcast_url || null,
-      is_podcast_article: Boolean(form.youtube_url || form.podcast_url),
-      status: 'pending',
-      section: 'newsroom',
-    });
+    const record = { ...buildRecord('pending'), slug: slugify(form.title) };
+    const { error: submitError } = draftId
+      ? await supabase.from('articles').update(record).eq('id', draftId)
+      : await supabase.from('articles').insert(record);
 
     setSaving(false);
-    if (insertError) {
-      setError(insertError.message);
+    if (submitError) {
+      setError(submitError.message);
       return;
     }
     setSubmitted(true);
@@ -297,11 +366,18 @@ const SubmitArticle = () => {
                 className="flex-1 bg-amber-500 text-black py-4 font-bold hover:bg-amber-400 transition-colors disabled:opacity-50">
                 {saving ? 'SUBMITTING…' : 'SUBMIT FOR REVIEW'}
               </button>
+              <button type="button" onClick={handleSaveDraft} disabled={savingDraft}
+                className="px-8 py-4 border-2 border-neutral-300 font-bold hover:border-black transition-colors disabled:opacity-50">
+                {savingDraft ? 'SAVING…' : 'SAVE DRAFT'}
+              </button>
             </div>
+            {draftSaved && (
+              <p className="text-sm text-green-700 text-center font-bold">Draft saved — you can come back and finish this anytime from your dashboard.</p>
+            )}
 
             <p className="text-sm text-neutral-600 text-center">
-              By submitting this form, you agree to our <a href="#" className="text-amber-500 hover:underline">Contributor Terms</a> and{' '}
-              <a href="#" className="text-amber-500 hover:underline">Privacy Policy</a>.
+              By submitting this form, you agree to our <a href="/terms-of-service" className="text-amber-500 hover:underline">Contributor Terms</a> and{' '}
+              <a href="/privacy-policy" className="text-amber-500 hover:underline">Privacy Policy</a>.
             </p>
           </form>
         </div>

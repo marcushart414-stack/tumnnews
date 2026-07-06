@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 interface ArticleRow {
   id: number;
@@ -17,6 +18,7 @@ interface ArticleRow {
 }
 
 interface SocialLinks {
+  website?: string;
   twitter?: string;
   facebook?: string;
   instagram?: string;
@@ -31,7 +33,7 @@ const brandInfo: Record<string, any> = {
     description: 'In-depth reporting on urban culture, politics, community issues, and the movements shaping our cities.',
     icon: '📰',
     focus: ['Community News', 'Urban Politics', 'Social Justice', 'Cultural Commentary'],
-    social: {} as SocialLinks, // TODO: real URLs needed — see note in chat
+    social: { website: 'https://urbannewsjournal.com' } as SocialLinks,
   },
   'transform-u-live': {
     name: 'Transform U! Live Show',
@@ -40,13 +42,11 @@ const brandInfo: Record<string, any> = {
     icon: '🎙️',
     focus: ['Personal Development', 'Faith Journey', 'Leadership', 'Authentic Living'],
     social: {
-      twitter: 'https://x.com/WarriorMandate',
       facebook: 'https://www.facebook.com/warriormandate',
       instagram: 'https://www.instagram.com/transformuliveshow',
       spotify: 'https://open.spotify.com/show/0Qe79YuVDX6cuoGPp4kcC0',
       youtube: 'https://www.youtube.com/@thetransformuliveshow',
     } as SocialLinks,
-    subscribeUrl: 'https://warriormandate.substack.com/', // per explicit instruction — flagged in chat as worth double-checking
     spotifyEmbed: 'https://open.spotify.com/embed/show/0Qe79YuVDX6cuoGPp4kcC0/video?utm_source=generator&theme=0&si=99baaf69b00743fb',
   },
   'kinetic-pe-mixx': {
@@ -55,7 +55,7 @@ const brandInfo: Record<string, any> = {
     description: 'Dynamic content at the intersection of culture, creativity, and kinetic energy.',
     icon: '⚡',
     focus: ['Youth Culture', 'Creative Expression', 'Movement & Dance', 'Cultural Innovation'],
-    social: {} as SocialLinks,
+    social: { instagram: 'https://instagram.com/kineticpemixx' } as SocialLinks,
   },
   'warrior-mandate': {
     name: 'Warrior Mandate',
@@ -64,6 +64,7 @@ const brandInfo: Record<string, any> = {
     icon: '⚔️',
     focus: ['Mens Leadership', 'Faith & Purpose', 'Fatherhood', 'Authentic Masculinity'],
     social: {} as SocialLinks,
+    subscribeUrl: 'https://warriormandate.substack.com/',
   },
 };
 
@@ -81,6 +82,7 @@ function toCardArticle(a: ArticleRow) {
 }
 
 const SOCIAL_LABELS: { key: keyof SocialLinks; label: string }[] = [
+  { key: 'website', label: 'Visit Website' },
   { key: 'twitter', label: 'Twitter' },
   { key: 'facebook', label: 'Facebook' },
   { key: 'instagram', label: 'Instagram' },
@@ -91,6 +93,7 @@ const SOCIAL_LABELS: { key: keyof SocialLinks; label: string }[] = [
 const BrandPage = () => {
   const { brandId } = useParams();
   const brand = brandInfo[brandId || ''] || brandInfo['urban-news-journal'];
+  useSEO(brand.name, brand.description);
 
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);

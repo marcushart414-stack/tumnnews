@@ -61,8 +61,8 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500">
           <p>&copy; {currentYear} Transform U Media Network. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-amber-500 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-amber-500 transition-colors">Terms of Service</a>
+            <Link to="/privacy-policy" className="hover:text-amber-500 transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:text-amber-500 transition-colors">Terms of Service</Link>
             <a href="mailto:info@tumnnews.com" className="hover:text-amber-500 transition-colors">Contact</a>
           </div>
         </div>

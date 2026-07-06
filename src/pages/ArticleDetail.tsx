@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 interface ArticleRow {
   id: number;
@@ -27,6 +28,7 @@ const ArticleDetail = () => {
   const [related, setRelated] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  useSEO(article?.title || 'Dispatch', article?.excerpt);
 
   useEffect(() => {
     if (!id) return;

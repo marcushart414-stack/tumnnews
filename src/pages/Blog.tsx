@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ArticleCard from '../components/ArticleCard';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 interface ArticleRow {
   id: number;
@@ -29,6 +30,7 @@ function toCardArticle(a: ArticleRow) {
 }
 
 const Blog = () => {
+  useSEO('Blog', 'Editorial content, guest posts, and thought leadership on culture, faith, and transformation from Transform U Media Network.');
   const [posts, setPosts] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);
 

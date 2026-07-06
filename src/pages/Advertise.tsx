@@ -1,7 +1,9 @@
 import { useState, FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 const Advertise = () => {
+  useSEO('Advertise', 'Sponsorship and advertising packages for Transform U Media Network — Standard, Premium, and Enterprise tiers, plus sponsored content and podcast sponsorships.');
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', company: '', package_interest: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,36 +41,6 @@ const Advertise = () => {
           <p className="text-xl text-neutral-300">
             Reach engaged audiences seeking transformation, faith-based content, and authentic leadership.
           </p>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-neutral-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4 text-center">Our Reach</h2>
-          <p className="text-center text-sm text-neutral-500 mb-12 max-w-2xl mx-auto">
-            [ Note: these figures are placeholders from the original build — swap in your real
-            analytics before this page goes live publicly. Inflated numbers are a fast way to
-            lose credibility with a serious advertiser doing due diligence. ]
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-amber-500 mb-2">500K+</div>
-              <div className="text-neutral-600">Monthly Readers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-amber-500 mb-2">250K+</div>
-              <div className="text-neutral-600">Podcast Downloads</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-amber-500 mb-2">100K+</div>
-              <div className="text-neutral-600">Email Subscribers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-amber-500 mb-2">4</div>
-              <div className="text-neutral-600">Media Brands</div>
-            </div>
-          </div>
         </div>
       </section>
 

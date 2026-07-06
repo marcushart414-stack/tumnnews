@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /academy/portal/
+
+Sitemap: https://tumnnews.com/sitemap.xml

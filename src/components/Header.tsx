@@ -39,32 +39,33 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
-            <div className="relative group">
-              <button
-                onMouseEnter={() => setBrandsOpen(true)}
-                onMouseLeave={() => setBrandsOpen(false)}
-                className="text-sm font-medium hover:text-amber-500 transition-colors flex items-center gap-1"
-              >
+            {/* FIX: onMouseEnter/onMouseLeave now live on this outer wrapper only,
+                and the dropdown sits flush (pt-2 instead of mt-2) so there's no
+                dead zone between the button and the menu. */}
+            <div
+              className="relative"
+              onMouseEnter={() => setBrandsOpen(true)}
+              onMouseLeave={() => setBrandsOpen(false)}
+            >
+              <Link to="/brands" className="text-sm font-medium hover:text-amber-500 transition-colors flex items-center gap-1">
                 OUR BRANDS
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </Link>
               {brandsOpen && (
-                <div
-                  onMouseEnter={() => setBrandsOpen(true)}
-                  onMouseLeave={() => setBrandsOpen(false)}
-                  className="absolute top-full left-0 mt-2 w-64 bg-neutral-900 border border-neutral-700 shadow-xl"
-                >
-                  {brands.map((brand) => (
-                    <Link
-                      key={brand.id}
-                      to={`/brand/${brand.id}`}
-                      className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800 last:border-b-0"
-                    >
-                      {brand.name}
-                    </Link>
-                  ))}
+                <div className="absolute top-full left-0 pt-2 w-64">
+                  <div className="bg-neutral-900 border border-neutral-700 shadow-xl">
+                    {brands.map((brand) => (
+                      <Link
+                        key={brand.id}
+                        to={`/brand/${brand.id}`}
+                        className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800 last:border-b-0"
+                      >
+                        {brand.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -74,32 +75,30 @@ const Header = () => {
             <Link to="/blog" className="text-sm font-medium hover:text-amber-500 transition-colors">
               BLOG
             </Link>
-            <div className="relative group">
-              <button
-                onMouseEnter={() => setAcademyOpen(true)}
-                onMouseLeave={() => setAcademyOpen(false)}
-                className="text-sm font-medium hover:text-amber-500 transition-colors flex items-center gap-1"
-              >
+            <div
+              className="relative"
+              onMouseEnter={() => setAcademyOpen(true)}
+              onMouseLeave={() => setAcademyOpen(false)}
+            >
+              <Link to="/academy" className="text-sm font-medium hover:text-amber-500 transition-colors flex items-center gap-1">
                 TUMN ACADEMY
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </Link>
               {academyOpen && (
-                <div
-                  onMouseEnter={() => setAcademyOpen(true)}
-                  onMouseLeave={() => setAcademyOpen(false)}
-                  className="absolute top-full left-0 mt-2 w-56 bg-neutral-900 border border-neutral-700 shadow-xl"
-                >
-                  <Link to="/academy" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800">
-                    Program Overview
-                  </Link>
-                  <Link to="/academy/enroll" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800">
-                    Enroll Now
-                  </Link>
-                  <Link to="/academy/portal/login" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors">
-                    Academy Hub Login
-                  </Link>
+                <div className="absolute top-full left-0 pt-2 w-56">
+                  <div className="bg-neutral-900 border border-neutral-700 shadow-xl">
+                    <Link to="/academy" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800">
+                      Program Overview
+                    </Link>
+                    <Link to="/academy/enroll" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors border-b border-neutral-800">
+                      Enroll Now
+                    </Link>
+                    <Link to="/academy/portal/login" className="block px-6 py-3 text-sm hover:bg-neutral-800 hover:text-amber-500 transition-colors">
+                      Academy Hub Login
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>

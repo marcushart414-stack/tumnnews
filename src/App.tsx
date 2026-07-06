@@ -11,6 +11,9 @@ import MemberDashboard from './pages/MemberDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import BrandPage from './pages/BrandPage';
+import Brands from './pages/Brands';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import AcademyOverview from './pages/academy/AcademyOverview';
 import AcademyEnroll from './pages/academy/AcademyEnroll';
 import PortalLogin from './pages/portal/PortalLogin';
@@ -34,7 +37,10 @@ function App() {
             <Route path="/dashboard" element={<MemberDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/brands" element={<Brands />} />
             <Route path="/brand/:brandId" element={<BrandPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/academy" element={<AcademyOverview />} />
             <Route path="/academy/enroll" element={<AcademyEnroll />} />
             <Route path="/academy/portal/login" element={<PortalLogin />} />

@@ -5,8 +5,10 @@
 // so this component only renders its own page content.
 
 import { Link } from 'react-router-dom';
+import { useSEO } from '../../lib/useSEO';
 
 export default function AcademyOverview() {
+  useSEO('TUMN Academy', 'A certified youth media production program — Foundations and Correspondent Track — with a direct pipeline into paid TUMN Youth Correspondent roles.');
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
 

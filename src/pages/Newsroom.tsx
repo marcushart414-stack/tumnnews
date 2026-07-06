@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import ArticleCard from '../components/ArticleCard';
 import { supabase } from '../lib/supabase';
+import { useSEO } from '../lib/useSEO';
 
 interface ArticleRow {
   id: number;
@@ -31,6 +32,7 @@ function toCardArticle(a: ArticleRow) {
 }
 
 const Newsroom = () => {
+  useSEO('Newsroom', 'Podcast episodes transformed into SEO-optimized articles, plus breaking news and analysis from Transform U Media Network.');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [articles, setArticles] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);

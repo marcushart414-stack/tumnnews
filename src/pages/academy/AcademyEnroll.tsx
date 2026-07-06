@@ -8,11 +8,13 @@
 // The real React form below still does the actual submitting at runtime.
 
 import { useState, FormEvent } from 'react';
+import { useSEO } from '../../lib/useSEO';
 
 const FOUNDING_SEATS_TOTAL = 10;
 const FOUNDING_SEATS_TAKEN = 3; // update as spots fill
 
 export default function AcademyEnroll() {
+  useSEO('Enroll — TUMN Academy Founding Cohort', 'Enroll in TUMN Academy — Foundations and Correspondent Track. Founding Cohort seats now open.');
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     student_name: '', student_age: '', program_level: '', pricing_tier: '',
