@@ -1,77 +1,66 @@
-import { useState } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import ArticleCard from '../components/ArticleCard';
+import { supabase } from '../lib/supabase';
+
+interface ArticleRow {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string | null;
+  author_name: string | null;
+  author_email: string;
+  published_at: string | null;
+  created_at: string;
+  featured_image: string | null;
+  is_podcast_article: boolean | null;
+}
+
+const categories = ['All', 'Faith', 'Leadership', 'Trauma', 'Culture', 'Business', 'Mental Health', 'Politics', 'Entertainment'];
+
+function toCardArticle(a: ArticleRow) {
+  return {
+    id: String(a.id),
+    title: a.title,
+    excerpt: a.excerpt,
+    category: a.category || 'Culture',
+    author: a.author_name || a.author_email,
+    date: a.published_at || a.created_at,
+    image: a.featured_image,
+    type: a.is_podcast_article ? ('podcast-article' as const) : ('article' as const),
+  };
+}
 
 const Newsroom = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [articles, setArticles] = useState<ArticleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-  const categories = ['All', 'Faith', 'Leadership', 'Trauma', 'Culture', 'Business', 'Mental Health', 'Politics', 'Entertainment'];
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .eq('section', 'newsroom')
+        .order('published_at', { ascending: false });
+      if (!error && data) setArticles(data as ArticleRow[]);
+      setLoading(false);
+    })();
+  }, []);
 
-  const articles = [
-    {
-      id: '1',
-      title: 'Faith-Driven Leadership in Modern Business',
-      excerpt: 'Exploring how faith principles transform organizational culture and drive authentic leadership in today\'s corporate landscape.',
-      category: 'Leadership',
-      author: 'Marcus Thompson',
-      date: '2024-01-15',
-      image: null,
-      type: 'podcast-article' as const
-    },
-    {
-      id: '2',
-      title: 'Trauma-Informed Approaches to Community Building',
-      excerpt: 'Understanding the impact of collective trauma and creating healing spaces within urban communities.',
-      category: 'Trauma',
-      author: 'Dr. Sarah Williams',
-      date: '2024-01-14',
-      image: null,
-      type: 'article' as const
-    },
-    {
-      id: '3',
-      title: 'The Intersection of Faith and Mental Health',
-      excerpt: 'Breaking stigmas and building bridges between spiritual practices and mental wellness.',
-      category: 'Mental Health',
-      author: 'Rev. James Porter',
-      date: '2024-01-13',
-      image: null,
-      type: 'podcast-article' as const
-    },
-    {
-      id: '4',
-      title: 'Urban Culture and the Politics of Representation',
-      excerpt: 'How urban communities are reclaiming their narratives in mainstream media and political discourse.',
-      category: 'Politics',
-      author: 'Angela Martinez',
-      date: '2024-01-12',
-      image: null,
-      type: 'article' as const
-    },
-    {
-      id: '5',
-      title: 'Building Kingdom Business in Secular Spaces',
-      excerpt: 'Strategies for entrepreneurs integrating faith values into competitive business environments.',
-      category: 'Business',
-      author: 'David Chen',
-      date: '2024-01-11',
-      image: null,
-      type: 'podcast-article' as const
-    },
-    {
-      id: '6',
-      title: 'Entertainment Industry and Cultural Transformation',
-      excerpt: 'The role of faith-based content creators in reshaping entertainment narratives.',
-      category: 'Entertainment',
-      author: 'Tasha Brown',
-      date: '2024-01-10',
-      image: null,
-      type: 'article' as const
-    },
-  ];
-
+  const cardArticles = articles.map(toCardArticle);
   const filteredArticles = selectedCategory === 'All'
-    ? articles
-    : articles.filter(article => article.category === selectedCategory);
+    ? cardArticles
+    : cardArticles.filter((article) => article.category === selectedCategory);
+  const podcastArticles = cardArticles.filter((a) => a.type === 'podcast-article').slice(0, 3);
+
+  async function handleSubscribe(e: FormEvent) {
+    e.preventDefault();
+    const { error } = await supabase.from('newsletter_subscribers').insert({ email, source: 'newsroom' });
+    if (!error) setSubscribed(true);
+  }
 
   return (
     <div className="bg-white">
@@ -130,6 +119,8 @@ const Newsroom = () => {
                 </span>
               </div>
 
+              {loading && <p className="text-neutral-500">Loading articles…</p>}
+
               <div className="space-y-8">
                 {filteredArticles.map((article) => (
                   <div key={article.id} className="border-b border-neutral-200 pb-8 last:border-b-0">
@@ -138,7 +129,7 @@ const Newsroom = () => {
                 ))}
               </div>
 
-              {filteredArticles.length === 0 && (
+              {!loading && filteredArticles.length === 0 && (
                 <div className="text-center py-20 text-neutral-500">
                   <p>No articles found in this category.</p>
                 </div>
@@ -161,7 +152,8 @@ const Newsroom = () => {
                   🎙️ Latest Podcast Episodes
                 </h3>
                 <div className="space-y-4">
-                  {articles.filter(a => a.type === 'podcast-article').slice(0, 3).map((article) => (
+                  {podcastArticles.length === 0 && <p className="text-sm text-neutral-500">No podcast articles yet.</p>}
+                  {podcastArticles.map((article) => (
                     <div key={article.id} className="border-b border-neutral-200 pb-3 last:border-b-0">
                       <h4 className="font-bold text-sm mb-1 line-clamp-2 hover:text-amber-500 cursor-pointer">
                         {article.title}
@@ -175,17 +167,26 @@ const Newsroom = () => {
               {/* Newsletter Signup */}
               <div className="bg-black text-white p-6">
                 <h3 className="text-lg font-bold mb-3">Subscribe to TUMN</h3>
-                <p className="text-sm text-neutral-300 mb-4">
-                  Get weekly updates delivered to your inbox.
-                </p>
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="w-full px-4 py-2 mb-3 text-black"
-                />
-                <button className="w-full bg-amber-500 text-black font-bold py-2 hover:bg-amber-400 transition-colors">
-                  SUBSCRIBE
-                </button>
+                {subscribed ? (
+                  <p className="text-sm text-amber-400">You're subscribed — thanks for joining.</p>
+                ) : (
+                  <form onSubmit={handleSubscribe}>
+                    <p className="text-sm text-neutral-300 mb-4">
+                      Get weekly updates delivered to your inbox.
+                    </p>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-2 mb-3 text-black"
+                    />
+                    <button type="submit" className="w-full bg-amber-500 text-black font-bold py-2 hover:bg-amber-400 transition-colors">
+                      SUBSCRIBE
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
           </div>

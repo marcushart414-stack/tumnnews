@@ -1,54 +1,124 @@
+import { useEffect, useState, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
+import { supabase } from '../lib/supabase';
+
+interface ArticleRow {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string | null;
+  author_name: string | null;
+  author_email: string;
+  published_at: string | null;
+  created_at: string;
+  featured_image: string | null;
+  is_podcast_article: boolean | null;
+}
+
+interface SocialLinks {
+  twitter?: string;
+  facebook?: string;
+  instagram?: string;
+  spotify?: string;
+  youtube?: string;
+}
+
+const brandInfo: Record<string, any> = {
+  'urban-news-journal': {
+    name: 'Urban News Journal',
+    tagline: 'Amplifying Urban Voices, Telling Untold Stories',
+    description: 'In-depth reporting on urban culture, politics, community issues, and the movements shaping our cities.',
+    icon: '📰',
+    focus: ['Community News', 'Urban Politics', 'Social Justice', 'Cultural Commentary'],
+    social: {} as SocialLinks, // TODO: real URLs needed — see note in chat
+  },
+  'transform-u-live': {
+    name: 'Transform U! Live Show',
+    tagline: 'Where Transformation Meets Conversation',
+    description: 'Weekly podcast exploring personal transformation through faith, leadership, and authentic dialogue.',
+    icon: '🎙️',
+    focus: ['Personal Development', 'Faith Journey', 'Leadership', 'Authentic Living'],
+    social: {
+      twitter: 'https://x.com/WarriorMandate',
+      facebook: 'https://www.facebook.com/warriormandate',
+      instagram: 'https://www.instagram.com/transformuliveshow',
+      spotify: 'https://open.spotify.com/show/0Qe79YuVDX6cuoGPp4kcC0',
+      youtube: 'https://www.youtube.com/@thetransformuliveshow',
+    } as SocialLinks,
+    subscribeUrl: 'https://warriormandate.substack.com/', // per explicit instruction — flagged in chat as worth double-checking
+    spotifyEmbed: 'https://open.spotify.com/embed/show/0Qe79YuVDX6cuoGPp4kcC0/video?utm_source=generator&theme=0&si=99baaf69b00743fb',
+  },
+  'kinetic-pe-mixx': {
+    name: 'Kinetic PE MIXX',
+    tagline: 'Energy in Motion',
+    description: 'Dynamic content at the intersection of culture, creativity, and kinetic energy.',
+    icon: '⚡',
+    focus: ['Youth Culture', 'Creative Expression', 'Movement & Dance', 'Cultural Innovation'],
+    social: {} as SocialLinks,
+  },
+  'warrior-mandate': {
+    name: 'Warrior Mandate',
+    tagline: 'Forging Men of Purpose',
+    description: 'Empowering men to lead with integrity, faith, and authentic masculinity in modern society.',
+    icon: '⚔️',
+    focus: ['Mens Leadership', 'Faith & Purpose', 'Fatherhood', 'Authentic Masculinity'],
+    social: {} as SocialLinks,
+  },
+};
+
+function toCardArticle(a: ArticleRow) {
+  return {
+    id: String(a.id),
+    title: a.title,
+    excerpt: a.excerpt,
+    category: a.category || 'Culture',
+    author: a.author_name || a.author_email,
+    date: a.published_at || a.created_at,
+    image: a.featured_image,
+    type: a.is_podcast_article ? ('podcast-article' as const) : ('article' as const),
+  };
+}
+
+const SOCIAL_LABELS: { key: keyof SocialLinks; label: string }[] = [
+  { key: 'twitter', label: 'Twitter' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'spotify', label: 'Spotify' },
+  { key: 'youtube', label: 'YouTube' },
+];
 
 const BrandPage = () => {
   const { brandId } = useParams();
-
-  const brandInfo: Record<string, any> = {
-    'urban-news-journal': {
-      name: 'Urban News Journal',
-      tagline: 'Amplifying Urban Voices, Telling Untold Stories',
-      description: 'In-depth reporting on urban culture, politics, community issues, and the movements shaping our cities.',
-      icon: '📰',
-      focus: ['Community News', 'Urban Politics', 'Social Justice', 'Cultural Commentary']
-    },
-    'transform-u-live': {
-      name: 'Transform U! Live Show',
-      tagline: 'Where Transformation Meets Conversation',
-      description: 'Weekly podcast exploring personal transformation through faith, leadership, and authentic dialogue.',
-      icon: '🎙️',
-      focus: ['Personal Development', 'Faith Journey', 'Leadership', 'Authentic Living']
-    },
-    'kinetic-pe-mixx': {
-      name: 'Kinetic PE MIXX',
-      tagline: 'Energy in Motion',
-      description: 'Dynamic content at the intersection of culture, creativity, and kinetic energy.',
-      icon: '⚡',
-      focus: ['Youth Culture', 'Creative Expression', 'Movement & Dance', 'Cultural Innovation']
-    },
-    'warrior-mandate': {
-      name: 'Warrior Mandate',
-      tagline: 'Forging Men of Purpose',
-      description: 'Empowering men to lead with integrity, faith, and authentic masculinity in modern society.',
-      icon: '⚔️',
-      focus: ['Mens Leadership', 'Faith & Purpose', 'Fatherhood', 'Authentic Masculinity']
-    }
-  };
-
   const brand = brandInfo[brandId || ''] || brandInfo['urban-news-journal'];
 
-  const brandArticles = [
-    {
-      id: '1',
-      title: `Featured Story from ${brand.name}`,
-      excerpt: 'This is a sample article that would be specifically tagged to this brand within the TUMN network.',
-      category: brand.focus[0],
-      author: 'Staff Writer',
-      date: '2024-01-15',
-      image: null,
-      type: 'article' as const
-    },
-  ];
+  const [articles, setArticles] = useState<ArticleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .eq('brand_slug', brandId)
+        .order('published_at', { ascending: false });
+      setArticles((data as ArticleRow[]) || []);
+      setLoading(false);
+    })();
+  }, [brandId]);
+
+  async function handleSubscribe(e: FormEvent) {
+    e.preventDefault();
+    const { error } = await supabase.from('newsletter_subscribers').insert({ email, source: `brand:${brandId}` });
+    if (!error) setSubscribed(true);
+  }
+
+  const cardArticles = articles.map(toCardArticle);
+  const hasSocial = Object.keys(brand.social || {}).length > 0;
 
   return (
     <div className="bg-white">
@@ -76,10 +146,7 @@ const BrandPage = () => {
           <h2 className="text-3xl font-bold mb-8">Our Focus</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {brand.focus.map((area: string) => (
-              <div
-                key={area}
-                className="bg-white border-2 border-neutral-300 p-6 text-center hover:border-amber-500 transition-colors"
-              >
+              <div key={area} className="bg-white border-2 border-neutral-300 p-6 text-center hover:border-amber-500 transition-colors">
                 <div className="font-bold">{area}</div>
               </div>
             ))}
@@ -87,24 +154,22 @@ const BrandPage = () => {
         </div>
       </section>
 
+      {/* Real Spotify embed, Transform U Live only */}
       {brandId === 'transform-u-live' && (
         <section className="py-16">
           <div className="max-w-7xl mx-auto px-4">
             <h2 className="text-3xl font-bold mb-8">Latest Episodes</h2>
             <div className="bg-neutral-50 border-2 border-neutral-300 p-8">
-              <div className="aspect-video bg-neutral-200 mb-6 flex items-center justify-center text-neutral-500">
-                [ Spotify Playlist Embed - Transform U! Live Episodes ]
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-neutral-100 p-4">
-                  <h3 className="font-bold mb-2">🎙️ Episode 42: Faith-Driven Leadership</h3>
-                  <p className="text-sm text-neutral-600">Exploring authentic leadership principles</p>
-                </div>
-                <div className="bg-neutral-100 p-4">
-                  <h3 className="font-bold mb-2">🎙️ Episode 41: Overcoming Trauma</h3>
-                  <p className="text-sm text-neutral-600">Healing through faith and community</p>
-                </div>
-              </div>
+              <iframe
+                style={{ borderRadius: '12px' }}
+                src={brand.spotifyEmbed}
+                width="100%"
+                height="351"
+                frameBorder={0}
+                allowFullScreen
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+              />
             </div>
           </div>
         </section>
@@ -115,9 +180,15 @@ const BrandPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <h2 className="text-3xl font-bold mb-8">Latest from {brand.name}</h2>
+              {loading && <p className="text-neutral-500">Loading…</p>}
+              {!loading && cardArticles.length === 0 && (
+                <p className="text-neutral-500">No articles tagged to this brand yet.</p>
+              )}
               <div className="space-y-8">
-                {brandArticles.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
+                {cardArticles.map((article) => (
+                  <div key={article.id}>
+                    <ArticleCard article={article} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -132,42 +203,42 @@ const BrandPage = () => {
 
               <div className="bg-black text-white p-6">
                 <h3 className="text-lg font-bold mb-3">Subscribe to {brand.name}</h3>
-                <p className="text-sm text-neutral-300 mb-4">
-                  Get updates delivered to your inbox.
-                </p>
-                <input
-                  type="email"
-                  placeholder="Your email"
-                  className="w-full px-4 py-2 mb-3 text-black"
-                />
-                <button className="w-full bg-amber-500 text-black font-bold py-2 hover:bg-amber-400 transition-colors">
-                  SUBSCRIBE
-                </button>
+                {brand.subscribeUrl ? (
+                  <>
+                    <p className="text-sm text-neutral-300 mb-4">Get updates delivered to your inbox.</p>
+                    <a href={brand.subscribeUrl} target="_blank" rel="noopener noreferrer"
+                       className="block w-full text-center bg-amber-500 text-black font-bold py-2 hover:bg-amber-400 transition-colors">
+                      SUBSCRIBE
+                    </a>
+                  </>
+                ) : subscribed ? (
+                  <p className="text-sm text-amber-400">You're subscribed — thanks for joining.</p>
+                ) : (
+                  <form onSubmit={handleSubscribe}>
+                    <p className="text-sm text-neutral-300 mb-4">Get updates delivered to your inbox.</p>
+                    <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Your email" className="w-full px-4 py-2 mb-3 text-black" />
+                    <button type="submit" className="w-full bg-amber-500 text-black font-bold py-2 hover:bg-amber-400 transition-colors">
+                      SUBSCRIBE
+                    </button>
+                  </form>
+                )}
               </div>
 
               <div className="bg-neutral-50 border-2 border-neutral-300 p-6">
                 <h3 className="font-bold mb-4">Follow {brand.name}</h3>
-                <div className="space-y-2">
-                  <a href="#" className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
-                    Twitter
-                  </a>
-                  <a href="#" className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
-                    Facebook
-                  </a>
-                  <a href="#" className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
-                    Instagram
-                  </a>
-                  {brandId === 'transform-u-live' && (
-                    <>
-                      <a href="#" className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
-                        Spotify
+                {hasSocial ? (
+                  <div className="space-y-2">
+                    {SOCIAL_LABELS.filter(({ key }) => brand.social[key]).map(({ key, label }) => (
+                      <a key={key} href={brand.social[key]} target="_blank" rel="noopener noreferrer"
+                         className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
+                        {label}
                       </a>
-                      <a href="#" className="block px-4 py-2 bg-neutral-900 text-white text-center hover:bg-black">
-                        YouTube
-                      </a>
-                    </>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-neutral-500">Social links coming soon.</p>
+                )}
               </div>
             </div>
           </div>
@@ -180,10 +251,7 @@ const BrandPage = () => {
           <p className="text-neutral-300 mb-8">
             Have a story to tell? We are always looking for authentic voices and compelling narratives.
           </p>
-          <a
-            href="/submit-article"
-            className="inline-block bg-amber-500 text-black px-8 py-4 font-bold hover:bg-amber-400 transition-colors"
-          >
+          <a href="/submit-article" className="inline-block bg-amber-500 text-black px-8 py-4 font-bold hover:bg-amber-400 transition-colors">
             SUBMIT YOUR ARTICLE
           </a>
         </div>

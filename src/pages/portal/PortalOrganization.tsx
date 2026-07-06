@@ -66,7 +66,7 @@ export default function PortalOrganization() {
             <div className="text-amber-600 text-xs font-mono uppercase tracking-widest mb-1">Need a higher tier?</div>
             <h3 className="font-bold">Upgrade your license for more cohorts and co-branding.</h3>
           </div>
-          <a href="mailto:executive.office@marcus-hart.com?subject=TUMN%20Academy%20in%20a%20Box%20-%20Upgrade%20Request"
+          <a href="mailto:info@tumnnews.com?subject=TUMN%20Academy%20in%20a%20Box%20-%20Upgrade%20Request"
              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-3 rounded-full transition">
             Talk to TUMN
           </a>

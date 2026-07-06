@@ -30,7 +30,7 @@ export default function AcademyEnroll() {
       await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
       setSubmitted(true);
     } catch {
-      alert('Something went wrong submitting your application. Please email academy@transformumedia.com directly.');
+      alert('Something went wrong submitting your application. Please email info@tumnnews.com directly.');
     }
   }
 
@@ -110,7 +110,7 @@ export default function AcademyEnroll() {
           <h2 className="text-3xl font-bold mb-4">Start your application.</h2>
           <p className="text-neutral-600 mb-4">This reserves your spot for review — it isn't a payment. TUMN Academy staff will follow up within 2 business days to confirm your seat and collect payment or sliding-scale documentation.</p>
           <p className="text-neutral-600 mb-4">Prefer to talk it through first? Book a free info session instead.</p>
-          <a href="https://calendly.com/tumn-academy/info-session" target="_blank" rel="noopener noreferrer"
+          <a href="https://cal.com/marcushart/30min" target="_blank" rel="noopener noreferrer"
              className="inline-block border border-neutral-300 hover:border-amber-500 hover:text-amber-600 px-6 py-3 rounded-full transition">
             Book an Info Session (Calendly)
           </a>

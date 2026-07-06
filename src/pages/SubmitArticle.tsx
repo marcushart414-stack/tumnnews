@@ -1,4 +1,128 @@
+import { useEffect, useState, FormEvent } from 'react';
+import { supabase } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
+
+const categories = ['Faith', 'Leadership', 'Trauma', 'Culture', 'Business', 'Mental Health', 'Politics', 'Entertainment'];
+
+function slugify(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    + '-' + Date.now().toString(36); // uniqueness safeguard
+}
+
 const SubmitArticle = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    first_name: '', last_name: '', bio: '', website: '',
+    title: '', category: '', tags: '', summary: '', content: '',
+    featured_image: '', youtube_url: '', podcast_url: '', agree: false,
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      setCheckingAuth(false);
+    })();
+  }, []);
+
+  function update<K extends keyof typeof form>(field: K, value: typeof form[K]) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!user) return;
+    setError(null);
+    setSaving(true);
+
+    const { error: insertError } = await supabase.from('articles').insert({
+      author_email: user.email,
+      author_name: `${form.first_name} ${form.last_name}`.trim(),
+      author_bio: form.bio || null,
+      author_website: form.website || null,
+      title: form.title,
+      slug: slugify(form.title),
+      excerpt: form.summary,
+      content: form.content,
+      category: form.category,
+      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
+      featured_image: form.featured_image || null,
+      youtube_url: form.youtube_url || null,
+      podcast_url: form.podcast_url || null,
+      is_podcast_article: Boolean(form.youtube_url || form.podcast_url),
+      status: 'pending',
+      section: 'newsroom',
+    });
+
+    setSaving(false);
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    setSubmitted(true);
+  }
+
+  if (checkingAuth) {
+    return <div className="bg-white py-24 text-center text-neutral-500">Checking your account…</div>;
+  }
+
+  if (!user) {
+    return (
+      <div className="bg-white">
+        <section className="bg-black text-white py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <h1 className="text-5xl font-bold mb-4">Submit Your Article</h1>
+            <p className="text-xl text-neutral-300">
+              Share your insights with the TUMN community. Free members can submit guest posts for editorial review.
+            </p>
+          </div>
+        </section>
+        <section className="bg-black text-white py-16 border-t border-neutral-800">
+          <div className="max-w-4xl mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-6">Sign in to submit an article</h2>
+            <p className="text-neutral-300 mb-8">
+              Create a free TUMN account to submit articles, save drafts, track your submissions,
+              and connect with our community of contributors.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <a href="/register" className="inline-block bg-amber-500 text-black px-8 py-4 font-bold hover:bg-amber-400 transition-colors">
+                CREATE FREE ACCOUNT
+              </a>
+              <a href="/login" className="inline-block border-2 border-white text-white px-8 py-4 font-bold hover:bg-white hover:text-black transition-colors">
+                SIGN IN
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="bg-white py-24">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h1 className="text-3xl font-bold mb-4">Submitted for review 🎉</h1>
+          <p className="text-neutral-600 mb-8">
+            Thanks, {form.first_name}. Your article is in the editorial queue — response time is
+            typically 5-7 business days. You can track its status from your dashboard.
+          </p>
+          <a href="/dashboard" className="inline-block bg-amber-500 text-black px-8 py-4 font-bold hover:bg-amber-400 transition-colors">
+            GO TO MY DASHBOARD
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white">
       {/* Header */}
@@ -37,7 +161,7 @@ const SubmitArticle = () => {
             </div>
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
               <p className="text-sm text-neutral-700">
-                <strong>Note:</strong> All submissions undergo editorial review. Response time is typically 5-7 business days. 
+                <strong>Note:</strong> All submissions undergo editorial review. Response time is typically 5-7 business days.
                 Accepted articles may be edited for clarity, length, and style consistency.
               </p>
             </div>
@@ -49,8 +173,12 @@ const SubmitArticle = () => {
       <section className="py-12">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8">Article Submission Form</h2>
-          
-          <form className="space-y-6">
+
+          {error && (
+            <div className="bg-red-50 border-2 border-red-300 text-red-700 p-4 mb-6">{error}</div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Author Information */}
             <div className="bg-neutral-50 border-2 border-neutral-300 p-6">
               <h3 className="font-bold mb-4 text-lg">Author Information</h3>
@@ -58,45 +186,31 @@ const SubmitArticle = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold mb-2">First Name *</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    />
+                    <input type="text" required value={form.first_name} onChange={(e) => update('first_name', e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-2">Last Name *</label>
-                    <input
-                      type="text"
-                      required
-                      className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    />
+                    <input type="text" required value={form.last_name} onChange={(e) => update('last_name', e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">Email Address *</label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                  />
+                  <label className="block text-sm font-bold mb-2">Email Address</label>
+                  <input type="email" disabled value={user.email || ''}
+                    className="w-full px-4 py-2 border border-neutral-300 bg-neutral-100 text-neutral-500 outline-none" />
+                  <p className="text-xs text-neutral-500 mt-1">Locked to your signed-in account.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Author Bio (150 words max)</label>
-                  <textarea
-                    rows={3}
-                    maxLength={150}
+                  <textarea rows={3} maxLength={800} value={form.bio} onChange={(e) => update('bio', e.target.value)}
                     className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="Brief professional bio to display with your article..."
-                  />
+                    placeholder="Brief professional bio to display with your article..." />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Website/Social Media (Optional)</label>
-                  <input
-                    type="url"
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="https://"
-                  />
+                  <input type="url" value={form.website} onChange={(e) => update('website', e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://" />
                 </div>
               </div>
             </div>
@@ -107,59 +221,36 @@ const SubmitArticle = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold mb-2">Article Title *</label>
-                  <input
-                    type="text"
-                    required
+                  <input type="text" required value={form.title} onChange={(e) => update('title', e.target.value)}
                     className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="Enter a compelling, SEO-friendly title..."
-                  />
+                    placeholder="Enter a compelling, SEO-friendly title..." />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Category *</label>
-                  <select
-                    required
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                  >
+                  <select required value={form.category} onChange={(e) => update('category', e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none">
                     <option value="">Select a category</option>
-                    <option>Faith</option>
-                    <option>Leadership</option>
-                    <option>Trauma</option>
-                    <option>Culture</option>
-                    <option>Business</option>
-                    <option>Mental Health</option>
-                    <option>Politics</option>
-                    <option>Entertainment</option>
+                    {categories.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Tags (comma-separated)</label>
-                  <input
-                    type="text"
+                  <input type="text" value={form.tags} onChange={(e) => update('tags', e.target.value)}
                     className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="faith, leadership, transformation"
-                  />
+                    placeholder="faith, leadership, transformation" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Article Summary (200 words max) *</label>
-                  <textarea
-                    rows={4}
-                    required
-                    maxLength={200}
+                  <textarea rows={4} required maxLength={1200} value={form.summary} onChange={(e) => update('summary', e.target.value)}
                     className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="Brief summary for SEO meta description and article previews..."
-                  />
+                    placeholder="Brief summary for SEO meta description and article previews..." />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Article Content *</label>
-                  <textarea
-                    rows={20}
-                    required
+                  <textarea rows={20} required value={form.content} onChange={(e) => update('content', e.target.value)}
                     className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none font-mono text-sm"
-                    placeholder="Paste your article content here (800-2000 words)..."
-                  />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    You can use basic markdown formatting (# for headings, ** for bold, * for italic, etc.)
-                  </p>
+                    placeholder="Paste your article content here (800-2000 words)..." />
+                  <p className="text-xs text-neutral-500 mt-1">Separate paragraphs with a blank line.</p>
                 </div>
               </div>
             </div>
@@ -170,30 +261,19 @@ const SubmitArticle = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold mb-2">Featured Image URL</label>
-                  <input
-                    type="url"
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="https://"
-                  />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Image should be at least 1200x630px. Ensure you have rights to use the image.
-                  </p>
+                  <input type="url" value={form.featured_image} onChange={(e) => update('featured_image', e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://" />
+                  <p className="text-xs text-neutral-500 mt-1">Image should be at least 1200x630px. Ensure you have rights to use the image.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">YouTube Video Embed (Optional)</label>
-                  <input
-                    type="url"
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                  />
+                  <label className="block text-sm font-bold mb-2">YouTube Video Embed URL (Optional)</label>
+                  <input type="url" value={form.youtube_url} onChange={(e) => update('youtube_url', e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://www.youtube.com/embed/..." />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Podcast Episode Link (Optional)</label>
-                  <input
-                    type="url"
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none"
-                    placeholder="https://open.spotify.com/episode/..."
-                  />
+                  <input type="url" value={form.podcast_url} onChange={(e) => update('podcast_url', e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://open.spotify.com/episode/..." />
                 </div>
               </div>
             </div>
@@ -201,15 +281,11 @@ const SubmitArticle = () => {
             {/* Agreement */}
             <div className="bg-amber-50 border-2 border-amber-500 p-6">
               <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  required
-                  className="mt-1"
-                  id="agreement"
-                />
+                <input type="checkbox" required checked={form.agree} onChange={(e) => update('agree', e.target.checked)}
+                  className="mt-1" id="agreement" />
                 <label htmlFor="agreement" className="text-sm">
-                  <strong>I confirm that:</strong> This is my original work, I have not published it elsewhere, 
-                  I grant TUMN non-exclusive rights to publish and promote this content, and I understand 
+                  <strong>I confirm that:</strong> This is my original work, I have not published it elsewhere,
+                  I grant TUMN non-exclusive rights to publish and promote this content, and I understand
                   that TUMN may edit the content for clarity and style.
                 </label>
               </div>
@@ -217,17 +293,9 @@ const SubmitArticle = () => {
 
             {/* Submit Button */}
             <div className="flex gap-4">
-              <button
-                type="submit"
-                className="flex-1 bg-amber-500 text-black py-4 font-bold hover:bg-amber-400 transition-colors"
-              >
-                SUBMIT FOR REVIEW
-              </button>
-              <button
-                type="button"
-                className="px-8 py-4 border-2 border-neutral-300 font-bold hover:border-black transition-colors"
-              >
-                SAVE DRAFT
+              <button type="submit" disabled={saving}
+                className="flex-1 bg-amber-500 text-black py-4 font-bold hover:bg-amber-400 transition-colors disabled:opacity-50">
+                {saving ? 'SUBMITTING…' : 'SUBMIT FOR REVIEW'}
               </button>
             </div>
 
@@ -236,23 +304,6 @@ const SubmitArticle = () => {
               <a href="#" className="text-amber-500 hover:underline">Privacy Policy</a>.
             </p>
           </form>
-        </div>
-      </section>
-
-      {/* Member Benefits */}
-      <section className="bg-black text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Not a Member Yet?</h2>
-          <p className="text-neutral-300 mb-8">
-            Create a free TUMN account to submit articles, save drafts, track your submissions, 
-            and connect with our community of contributors.
-          </p>
-          <a
-            href="/register"
-            className="inline-block bg-amber-500 text-black px-8 py-4 font-bold hover:bg-amber-400 transition-colors"
-          >
-            CREATE FREE ACCOUNT
-          </a>
         </div>
       </section>
     </div>

@@ -1,38 +1,51 @@
+import { useEffect, useState } from 'react';
 import ArticleCard from '../components/ArticleCard';
+import { supabase } from '../lib/supabase';
+
+interface ArticleRow {
+  id: number;
+  title: string;
+  excerpt: string;
+  category: string | null;
+  author_name: string | null;
+  author_email: string;
+  published_at: string | null;
+  created_at: string;
+  featured_image: string | null;
+  is_podcast_article: boolean | null;
+}
+
+function toCardArticle(a: ArticleRow) {
+  return {
+    id: String(a.id),
+    title: a.title,
+    excerpt: a.excerpt,
+    category: a.category || 'Culture',
+    author: a.author_name || a.author_email,
+    date: a.published_at || a.created_at,
+    image: a.featured_image,
+    type: a.is_podcast_article ? ('podcast-article' as const) : ('article' as const),
+  };
+}
 
 const Blog = () => {
-  const blogPosts = [
-    {
-      id: '7',
-      title: 'The Power of Narrative in Faith Communities',
-      excerpt: 'How storytelling shapes collective identity and sustains spiritual movements across generations.',
-      category: 'Faith',
-      author: 'Pastor Michael Reed',
-      date: '2024-01-16',
-      image: null,
-      type: 'article' as const
-    },
-    {
-      id: '8',
-      title: 'Leadership Lessons from Urban Pioneers',
-      excerpt: 'Profiles of community leaders who are transforming neighborhoods through innovative approaches.',
-      category: 'Leadership',
-      author: 'Keisha Johnson',
-      date: '2024-01-15',
-      image: null,
-      type: 'article' as const
-    },
-    {
-      id: '9',
-      title: 'Cultural Shifts in Post-Pandemic America',
-      excerpt: 'Analyzing how COVID-19 accelerated changes in work, worship, and community engagement.',
-      category: 'Culture',
-      author: 'Dr. Ramon Garcia',
-      date: '2024-01-14',
-      image: null,
-      type: 'article' as const
-    },
-  ];
+  const [posts, setPosts] = useState<ArticleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .eq('section', 'blog')
+        .order('published_at', { ascending: false });
+      if (!error && data) setPosts(data as ArticleRow[]);
+      setLoading(false);
+    })();
+  }, []);
+
+  const blogPosts = posts.map(toCardArticle);
 
   return (
     <div className="bg-white">
@@ -61,6 +74,10 @@ const Blog = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
+              {loading && <p className="text-neutral-500">Loading posts…</p>}
+              {!loading && blogPosts.length === 0 && (
+                <p className="text-neutral-500">No blog posts published yet.</p>
+              )}
               <div className="space-y-8">
                 {blogPosts.map((post) => (
                   <div key={post.id} className="border-b border-neutral-200 pb-8 last:border-b-0">
@@ -69,7 +86,6 @@ const Blog = () => {
                 ))}
               </div>
             </div>
-
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-8">
               {/* Ad Zone */}
@@ -79,7 +95,6 @@ const Blog = () => {
                   [ 300x250 Sidebar Ad ]
                 </div>
               </div>
-
               {/* Popular Posts */}
               <div className="bg-neutral-50 border border-neutral-300 p-6">
                 <h3 className="text-lg font-bold mb-4">Popular This Week</h3>

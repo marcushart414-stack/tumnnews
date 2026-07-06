@@ -29,7 +29,7 @@ export default function AcademyOverview() {
             <Link to="/academy/enroll" className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-3 rounded-full transition">
               Enroll Now
             </Link>
-            <a href="mailto:executive.office@marcus-hart.com?subject=TUMN%20Academy%20Info%20Session"
+            <a href="mailto:info@tumnnews.com?subject=TUMN%20Academy%20Info%20Session"
                className="border border-neutral-300 hover:border-amber-500 hover:text-amber-600 px-6 py-3 rounded-full transition">
               Request an Info Session
             </a>
