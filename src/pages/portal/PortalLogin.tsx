@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signUp, signInAndGetProfile, ProfileRole } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
 
 const ROLE_ROUTES: Record<string, string> = {
   student: '/academy/portal/student',
@@ -12,11 +13,12 @@ const ROLE_ROUTES: Record<string, string> = {
 
 export default function PortalLogin() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [role, setRole] = useState<Extract<ProfileRole, 'student' | 'parent' | 'org_purchaser'>>('student');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signedUp, setSignedUp] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +49,17 @@ export default function PortalLogin() {
     setSignedUp(true);
   }
 
+  async function handleForgotPassword(e: FormEvent) {
+    e.preventDefault();
+    setError(null); setLoading(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (resetError) { setError(resetError.message); return; }
+    setResetSent(true);
+  }
+
   return (
     <div className="bg-neutral-50 text-neutral-900 min-h-screen">
       <section className="max-w-md mx-auto px-6 py-16">
@@ -70,7 +83,25 @@ export default function PortalLogin() {
 
           {error && <div className="bg-red-50 border border-red-300 text-red-700 text-sm rounded-md px-4 py-3 mb-4">{error}</div>}
 
-          {signedUp ? (
+          {mode === 'forgot' ? (
+            resetSent ? (
+              <div className="border border-amber-400 bg-amber-50 rounded-lg p-6">
+                <h3 className="font-bold mb-1">Check your email</h3>
+                <p className="text-neutral-700 text-sm">We've sent a password reset link.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border border-neutral-300 rounded-md px-3 py-2 focus:outline-none focus:border-amber-500" />
+                <button disabled={loading} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-2.5 rounded-full transition disabled:opacity-50">
+                  {loading ? 'Sending…' : 'Send Reset Link'}
+                </button>
+                <button type="button" onClick={() => { setMode('signin'); setError(null); }} className="w-full text-sm text-neutral-500 hover:text-amber-600">
+                  ← Back to sign in
+                </button>
+              </form>
+            )
+          ) : signedUp ? (
             <div className="border border-amber-400 bg-amber-50 rounded-lg p-6">
               <h3 className="font-bold mb-1">Check your email</h3>
               <p className="text-neutral-700 text-sm">We've sent a confirmation link to finish creating your account.</p>
@@ -83,6 +114,9 @@ export default function PortalLogin() {
                 className="w-full border border-neutral-300 rounded-md px-3 py-2 focus:outline-none focus:border-amber-500" />
               <button disabled={loading} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-semibold py-2.5 rounded-full transition disabled:opacity-50">
                 {loading ? 'Signing in…' : 'Sign In'}
+              </button>
+              <button type="button" onClick={() => { setMode('forgot'); setError(null); }} className="w-full text-sm text-neutral-500 hover:text-amber-600">
+                Forgot password?
               </button>
             </form>
           ) : (

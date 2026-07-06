@@ -14,6 +14,8 @@ import BrandPage from './pages/BrandPage';
 import Brands from './pages/Brands';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ResetPassword from './pages/ResetPassword';
+import Admin from './pages/admin/Admin';
 import AcademyOverview from './pages/academy/AcademyOverview';
 import AcademyEnroll from './pages/academy/AcademyEnroll';
 import PortalLogin from './pages/portal/PortalLogin';
@@ -41,6 +43,8 @@ function App() {
             <Route path="/brand/:brandId" element={<BrandPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/academy" element={<AcademyOverview />} />
             <Route path="/academy/enroll" element={<AcademyEnroll />} />
             <Route path="/academy/portal/login" element={<PortalLogin />} />
