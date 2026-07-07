@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useSEO } from '../lib/useSEO';
+import AdSlot from '../components/AdSlot';
 
 interface ArticleRow {
   id: number;
+  slug: string;
   title: string;
   excerpt: string;
   content: string;
@@ -23,7 +25,7 @@ interface ArticleRow {
 }
 
 const ArticleDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [article, setArticle] = useState<ArticleRow | null>(null);
   const [related, setRelated] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,13 +33,13 @@ const ArticleDetail = () => {
   useSEO(article?.title || 'Dispatch', article?.excerpt);
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .eq('id', id)
+        .eq('slug', slug)
         .eq('status', 'published')
         .single();
 
@@ -58,7 +60,7 @@ const ArticleDetail = () => {
       setRelated((relatedData as ArticleRow[]) || []);
       setLoading(false);
     })();
-  }, [id]);
+  }, [slug]);
 
   if (loading) {
     return <div className="bg-white py-24 text-center text-neutral-500">Loading article…</div>;
@@ -191,10 +193,7 @@ const ArticleDetail = () => {
               <div className="space-y-6 sticky top-24">
                 {/* Ad Zone */}
                 <div className="bg-white border-2 border-neutral-300 p-6">
-                  <div className="text-center text-sm text-neutral-500 mb-2">ADVERTISEMENT</div>
-                  <div className="aspect-square bg-neutral-100 flex items-center justify-center text-neutral-400">
-                    [ 300x250 Ad ]
-                  </div>
+                  <AdSlot size="mediumRectangle" />
                 </div>
 
                 {/* Author Bio */}
@@ -218,7 +217,7 @@ const ArticleDetail = () => {
                       {related.map((r) => (
                         <Link
                           key={r.id}
-                          to={`/article/${r.id}`}
+                          to={`/article/${r.slug}`}
                           className="block border-b border-neutral-200 pb-3 last:border-b-0"
                         >
                           <h4 className="font-bold text-sm mb-1 line-clamp-2 hover:text-amber-500">

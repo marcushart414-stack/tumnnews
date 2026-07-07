@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useSEO } from '../lib/useSEO';
+import ImageUpload from '../components/ImageUpload';
 import type { User } from '@supabase/supabase-js';
 
 const categories = ['Faith', 'Leadership', 'Trauma', 'Culture', 'Business', 'Mental Health', 'Politics', 'Entertainment'];
@@ -10,8 +11,41 @@ function slugify(title: string) {
   return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    + '-' + Date.now().toString(36); // uniqueness safeguard
+    .replace(/(^-|-$)/g, '') || 'article';
+}
+
+// Accepts a regular watch URL, a youtu.be short link, or an already-correct
+// embed URL, and always returns an /embed/ URL — the only format YouTube
+// will actually allow inside an <iframe>. Regular watch-page URLs actively
+// refuse to be framed, which is exactly the "refused to connect" error.
+function normalizeYouTubeUrl(url: string): string {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (trimmed.includes('/embed/')) return trimmed;
+
+  const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{6,})/);
+  if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+
+  const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/);
+  if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+
+  return trimmed; // unrecognized format — left as-is, will just not embed
+}
+
+// Inserts a row with a guaranteed-unique slug, retrying with -2, -3, etc.
+// if the clean slug is already taken (slug has a unique constraint).
+async function insertWithUniqueSlug(table: 'articles', baseRecord: Record<string, any>, baseSlug: string) {
+  let slug = baseSlug;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const { data, error } = await supabase.from(table).insert({ ...baseRecord, slug }).select('id').single();
+    if (!error) return { data, error: null };
+    if (error.code === '23505') { // unique_violation — try the next suffix
+      slug = `${baseSlug}-${attempt + 1}`;
+      continue;
+    }
+    return { data: null, error }; // a different error — don't keep retrying
+  }
+  return { data: null, error: { message: 'Could not generate a unique URL for this title.' } as any };
 }
 
 const SubmitArticle = () => {
@@ -89,7 +123,7 @@ const SubmitArticle = () => {
       category: form.category || null,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : null,
       featured_image: form.featured_image || null,
-      youtube_url: form.youtube_url || null,
+      youtube_url: form.youtube_url ? normalizeYouTubeUrl(form.youtube_url) : null,
       podcast_url: form.podcast_url || null,
       is_podcast_article: Boolean(form.youtube_url || form.podcast_url),
       status,
@@ -107,11 +141,7 @@ const SubmitArticle = () => {
       setSavingDraft(false);
       if (updateError) { setError(updateError.message); return; }
     } else {
-      const { data, error: insertError } = await supabase
-        .from('articles')
-        .insert({ ...buildRecord('draft'), slug: slugify(form.title || 'draft') })
-        .select('id')
-        .single();
+      const { data, error: insertError } = await insertWithUniqueSlug('articles', buildRecord('draft'), slugify(form.title || 'draft'));
       setSavingDraft(false);
       if (insertError) { setError(insertError.message); return; }
       setDraftId(data.id); // subsequent saves update this same row instead of creating duplicates
@@ -126,10 +156,14 @@ const SubmitArticle = () => {
     setError(null);
     setSaving(true);
 
-    const record = { ...buildRecord('pending'), slug: slugify(form.title) };
-    const { error: submitError } = draftId
-      ? await supabase.from('articles').update(record).eq('id', draftId)
-      : await supabase.from('articles').insert(record);
+    let submitError;
+    if (draftId) {
+      // Updating an existing draft — keep its slug as-is, don't regenerate
+      // (the URL may already have been shared/bookmarked).
+      ({ error: submitError } = await supabase.from('articles').update(buildRecord('pending')).eq('id', draftId));
+    } else {
+      ({ error: submitError } = await insertWithUniqueSlug('articles', buildRecord('pending'), slugify(form.title)));
+    }
 
     setSaving(false);
     if (submitError) {
@@ -329,15 +363,19 @@ const SubmitArticle = () => {
               <h3 className="font-bold mb-4 text-lg">Media & Links (Optional)</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold mb-2">Featured Image URL</label>
-                  <input type="url" value={form.featured_image} onChange={(e) => update('featured_image', e.target.value)}
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://" />
-                  <p className="text-xs text-neutral-500 mt-1">Image should be at least 1200x630px. Ensure you have rights to use the image.</p>
+                  <ImageUpload
+                    label="Featured Image"
+                    currentUrl={form.featured_image}
+                    folder="featured"
+                    onUploaded={(url) => update('featured_image', url)}
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">JPG or PNG, ideally 1200x630px or larger. Ensure you have rights to use the image.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold mb-2">YouTube Video Embed URL (Optional)</label>
+                  <label className="block text-sm font-bold mb-2">YouTube Video (Optional)</label>
                   <input type="url" value={form.youtube_url} onChange={(e) => update('youtube_url', e.target.value)}
-                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://www.youtube.com/embed/..." />
+                    className="w-full px-4 py-2 border border-neutral-300 focus:border-black outline-none" placeholder="https://www.youtube.com/watch?v=..." />
+                  <p className="text-xs text-neutral-500 mt-1">Paste any YouTube link — a regular watch link, a youtu.be short link, or an embed link. It's converted automatically.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-2">Podcast Episode Link (Optional)</label>

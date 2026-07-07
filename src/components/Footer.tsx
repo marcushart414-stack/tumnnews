@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import AdSlot from './AdSlot';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -7,9 +8,7 @@ const Footer = () => {
       {/* Footer Ad Zone */}
       <div className="bg-neutral-900 border-b border-neutral-800">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="text-center text-xs text-neutral-400">
-            [ Advertisement Space - 728x90 Footer Banner ]
-          </div>
+          <AdSlot size="leaderboard" />
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 py-12">

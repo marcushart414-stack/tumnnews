@@ -1,10 +1,12 @@
 import { useEffect, useState, FormEvent } from 'react';
 import ArticleCard from '../components/ArticleCard';
+import AdSlot from '../components/AdSlot';
 import { supabase } from '../lib/supabase';
 import { useSEO } from '../lib/useSEO';
 
 interface ArticleRow {
   id: number;
+  slug: string;
   title: string;
   excerpt: string;
   category: string | null;
@@ -20,7 +22,7 @@ const categories = ['All', 'Faith', 'Leadership', 'Trauma', 'Culture', 'Business
 
 function toCardArticle(a: ArticleRow) {
   return {
-    id: String(a.id),
+    id: a.slug, // ArticleCard's source is unseen — passing slug here so any internal /article/{id} link it builds still resolves correctly under slug-based routing
     title: a.title,
     excerpt: a.excerpt,
     category: a.category || 'Culture',
@@ -79,9 +81,7 @@ const Newsroom = () => {
       {/* Ad Zone */}
       <div className="bg-neutral-100 border-y border-neutral-300">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="text-center text-sm text-neutral-500">
-            [ Advertisement Space - 970x90 Billboard ]
-          </div>
+          <AdSlot size="billboard" />
         </div>
       </div>
 
@@ -142,10 +142,7 @@ const Newsroom = () => {
             <div className="lg:col-span-1 space-y-8">
               {/* Ad Zone */}
               <div className="bg-white border-2 border-neutral-300 p-6 sticky top-24">
-                <div className="text-center text-sm text-neutral-500 mb-2">ADVERTISEMENT</div>
-                <div className="aspect-square bg-neutral-100 flex items-center justify-center text-neutral-400">
-                  [ 300x250 Sidebar Ad ]
-                </div>
+                <AdSlot size="mediumRectangle" />
               </div>
 
               {/* Podcast Episodes */}

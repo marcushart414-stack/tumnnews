@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useRequireRole } from '../../lib/useRequireRole';
 import { useSEO } from '../../lib/useSEO';
@@ -14,6 +15,14 @@ interface ArticleRow {
   status: string | null;
 }
 
+const BRAND_OPTIONS = [
+  { value: '', label: 'No specific brand' },
+  { value: 'urban-news-journal', label: 'Urban News Journal' },
+  { value: 'transform-u-live', label: 'Transform U! Live Show' },
+  { value: 'kinetic-pe-mixx', label: 'Kinetic PE MIXX' },
+  { value: 'warrior-mandate', label: 'Warrior Mandate' },
+];
+
 const Admin = () => {
   useSEO('Admin — Article Review');
   const { loading: authLoading, profile } = useRequireRole('admin');
@@ -21,6 +30,16 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Per-article publish choices, keyed by article id — lets each submission
+  // be routed to Newsroom or Blog, and tagged to a brand, before publishing.
+  const [choices, setChoices] = useState<Record<number, { section: 'newsroom' | 'blog'; brandSlug: string }>>({});
+
+  function getChoice(id: number) {
+    return choices[id] || { section: 'newsroom' as const, brandSlug: '' };
+  }
+  function setChoice(id: number, patch: Partial<{ section: 'newsroom' | 'blog'; brandSlug: string }>) {
+    setChoices((c) => ({ ...c, [id]: { ...getChoice(id), ...patch } }));
+  }
 
   async function loadPending() {
     setLoading(true);
@@ -42,10 +61,16 @@ const Admin = () => {
   }, [authLoading, profile]);
 
   async function handlePublish(id: number) {
+    const choice = getChoice(id);
     setActioningId(id);
     const { error: updateError } = await supabase
       .from('articles')
-      .update({ status: 'published', published_at: new Date().toISOString() })
+      .update({
+        status: 'published',
+        published_at: new Date().toISOString(),
+        section: choice.section,
+        brand_slug: choice.brandSlug || null,
+      })
       .eq('id', id);
     setActioningId(null);
     if (updateError) { setError(updateError.message); return; }
@@ -70,9 +95,16 @@ const Admin = () => {
   return (
     <div className="bg-white">
       <section className="bg-black text-white py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-3xl font-bold mb-2">Article Review</h1>
-          <p className="text-neutral-300">{pending.length} submission{pending.length === 1 ? '' : 's'} awaiting review</p>
+        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Article Review</h1>
+            <p className="text-neutral-300">{pending.length} submission{pending.length === 1 ? '' : 's'} awaiting review</p>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <Link to="/admin/assignments" className="border border-neutral-500 px-4 py-2 text-sm hover:border-amber-500 hover:text-amber-500 transition-colors">Assignments</Link>
+            <Link to="/admin/sessions" className="border border-neutral-500 px-4 py-2 text-sm hover:border-amber-500 hover:text-amber-500 transition-colors">Class Sessions</Link>
+            <Link to="/admin/messages" className="border border-neutral-500 px-4 py-2 text-sm hover:border-amber-500 hover:text-amber-500 transition-colors">Messages</Link>
+          </div>
         </div>
       </section>
 
@@ -96,6 +128,31 @@ const Admin = () => {
                     </div>
                   </div>
                   <p className="text-neutral-700 mb-4">{article.excerpt}</p>
+
+                  <div className="flex gap-3 mb-4 flex-wrap">
+                    <div>
+                      <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">Publish to</label>
+                      <select
+                        value={getChoice(article.id).section}
+                        onChange={(e) => setChoice(article.id, { section: e.target.value as 'newsroom' | 'blog' })}
+                        className="border border-neutral-300 px-3 py-1.5 text-sm"
+                      >
+                        <option value="newsroom">Newsroom</option>
+                        <option value="blog">Blog</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">Tag to brand</label>
+                      <select
+                        value={getChoice(article.id).brandSlug}
+                        onChange={(e) => setChoice(article.id, { brandSlug: e.target.value })}
+                        className="border border-neutral-300 px-3 py-1.5 text-sm"
+                      >
+                        {BRAND_OPTIONS.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <button
                       onClick={() => handlePublish(article.id)}

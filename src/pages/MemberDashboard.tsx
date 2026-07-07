@@ -3,16 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { signOut } from '../lib/auth';
 import { useSEO } from '../lib/useSEO';
+import ImageUpload from '../components/ImageUpload';
 
 interface ArticleRow {
   id: number;
+  slug: string;
   title: string;
   status: string | null;
   created_at: string;
 }
 interface SavedRow {
   article_id: number;
-  articles: { id: number; title: string; author_name: string | null; author_email: string } | null;
+  articles: { id: number; slug: string; title: string; author_name: string | null; author_email: string } | null;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,12 +32,13 @@ const MemberDashboard = () => {
   useSEO('My Dashboard');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ id: string; full_name: string | null; email: string | null; created_at: string } | null>(null);
+  const [profile, setProfile] = useState<{ id: string; full_name: string | null; email: string | null; avatar_url: string | null; created_at: string } | null>(null);
   const [submissions, setSubmissions] = useState<ArticleRow[]>([]);
   const [drafts, setDrafts] = useState<ArticleRow[]>([]);
   const [saved, setSaved] = useState<SavedRow[]>([]);
   const [editingProfile, setEditingProfile] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [avatarInput, setAvatarInput] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -48,13 +51,14 @@ const MemberDashboard = () => {
       const email = userData.user.email;
 
       const [{ data: profileData }, { data: articleData }, { data: savedData }] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email, created_at').eq('id', userData.user.id).single(),
-        supabase.from('articles').select('id, title, status, created_at').eq('author_email', email).order('created_at', { ascending: false }),
-        supabase.from('saved_articles').select('article_id, articles(id, title, author_name, author_email)').eq('user_id', userData.user.id),
+        supabase.from('profiles').select('id, full_name, email, avatar_url, created_at').eq('id', userData.user.id).single(),
+        supabase.from('articles').select('id, slug, title, status, created_at').eq('author_email', email).order('created_at', { ascending: false }),
+        supabase.from('saved_articles').select('article_id, articles(id, slug, title, author_name, author_email)').eq('user_id', userData.user.id),
       ]);
 
       setProfile(profileData);
       setNameInput(profileData?.full_name || '');
+      setAvatarInput(profileData?.avatar_url || null);
       const all = (articleData as ArticleRow[]) || [];
       setSubmissions(all.filter((a) => a.status !== 'draft'));
       setDrafts(all.filter((a) => a.status === 'draft'));
@@ -66,10 +70,10 @@ const MemberDashboard = () => {
   async function handleSaveProfile() {
     if (!profile) return;
     setSavingProfile(true);
-    const { error } = await supabase.from('profiles').update({ full_name: nameInput }).eq('id', profile.id);
+    const { error } = await supabase.from('profiles').update({ full_name: nameInput, avatar_url: avatarInput }).eq('id', profile.id);
     setSavingProfile(false);
     if (!error) {
-      setProfile({ ...profile, full_name: nameInput });
+      setProfile({ ...profile, full_name: nameInput, avatar_url: avatarInput });
       setEditingProfile(false);
     }
   }
@@ -145,7 +149,7 @@ const MemberDashboard = () => {
                         Submitted on {new Date(submission.created_at).toLocaleDateString()}
                       </p>
                       {statusKey === 'published' && (
-                        <Link to={`/article/${submission.id}`} className="text-sm text-amber-500 font-bold hover:underline">
+                        <Link to={`/article/${submission.slug}`} className="text-sm text-amber-500 font-bold hover:underline">
                           View Published
                         </Link>
                       )}
@@ -160,7 +164,7 @@ const MemberDashboard = () => {
               <div className="space-y-4">
                 {saved.length === 0 && <p className="text-neutral-500">Nothing saved yet.</p>}
                 {saved.map((s) => s.articles && (
-                  <Link key={s.article_id} to={`/article/${s.articles.id}`}
+                  <Link key={s.article_id} to={`/article/${s.articles.slug}`}
                     className="block bg-white border-2 border-neutral-300 p-6 hover:border-black transition-colors">
                     <h3 className="font-bold mb-1">{s.articles.title}</h3>
                     <p className="text-sm text-neutral-600">by {s.articles.author_name || s.articles.author_email}</p>
@@ -173,9 +177,19 @@ const MemberDashboard = () => {
           <div className="lg:col-span-1 space-y-6">
             <div className="bg-neutral-50 border-2 border-neutral-300 p-6">
               <h3 className="font-bold mb-4">Profile</h3>
-              <div className="w-24 h-24 bg-neutral-300 rounded-full mb-4"></div>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-24 h-24 rounded-full object-cover mb-4" />
+              ) : (
+                <div className="w-24 h-24 bg-neutral-300 rounded-full mb-4"></div>
+              )}
               {editingProfile ? (
                 <div className="space-y-3">
+                  <ImageUpload
+                    label="Profile Photo"
+                    currentUrl={avatarInput}
+                    folder="avatars"
+                    onUploaded={(url) => setAvatarInput(url)}
+                  />
                   <div>
                     <label className="text-xs text-neutral-600 block mb-1">Name</label>
                     <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)}
@@ -186,7 +200,7 @@ const MemberDashboard = () => {
                       className="flex-1 bg-amber-500 text-black py-2 text-sm font-bold hover:bg-amber-400 transition-colors disabled:opacity-50">
                       {savingProfile ? 'SAVING…' : 'SAVE'}
                     </button>
-                    <button onClick={() => { setEditingProfile(false); setNameInput(profile?.full_name || ''); }}
+                    <button onClick={() => { setEditingProfile(false); setNameInput(profile?.full_name || ''); setAvatarInput(profile?.avatar_url || null); }}
                       className="flex-1 border border-neutral-300 py-2 text-sm font-bold hover:border-black transition-colors">
                       CANCEL
                     </button>

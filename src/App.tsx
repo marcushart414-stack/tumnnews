@@ -15,7 +15,12 @@ import Brands from './pages/Brands';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ResetPassword from './pages/ResetPassword';
+import EmailConfirmed from './pages/EmailConfirmed';
 import Admin from './pages/admin/Admin';
+import AdminAssignments from './pages/admin/AdminAssignments';
+import AdminSubmissions from './pages/admin/AdminSubmissions';
+import AdminSessions from './pages/admin/AdminSessions';
+import AdminMessages from './pages/admin/AdminMessages';
 import AcademyOverview from './pages/academy/AcademyOverview';
 import AcademyEnroll from './pages/academy/AcademyEnroll';
 import PortalLogin from './pages/portal/PortalLogin';
@@ -33,7 +38,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/newsroom" element={<Newsroom />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/article/:id" element={<ArticleDetail />} />
+            <Route path="/article/:slug" element={<ArticleDetail />} />
             <Route path="/advertise" element={<Advertise />} />
             <Route path="/submit-article" element={<SubmitArticle />} />
             <Route path="/dashboard" element={<MemberDashboard />} />
@@ -44,7 +49,12 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/email-confirmed" element={<EmailConfirmed />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/assignments" element={<AdminAssignments />} />
+            <Route path="/admin/submissions" element={<AdminSubmissions />} />
+            <Route path="/admin/sessions" element={<AdminSessions />} />
+            <Route path="/admin/messages" element={<AdminMessages />} />
             <Route path="/academy" element={<AcademyOverview />} />
             <Route path="/academy/enroll" element={<AcademyEnroll />} />
             <Route path="/academy/portal/login" element={<PortalLogin />} />
