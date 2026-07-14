@@ -1,39 +1,53 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
+import { supabase } from '../lib/supabase';
+
+interface ArticleRow {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: string | null;
+  author_name: string | null;
+  author_email: string;
+  published_at: string | null;
+  created_at: string;
+  featured_image: string | null;
+  is_podcast_article: boolean | null;
+}
+
+function toCardArticle(a: ArticleRow) {
+  return {
+    id: a.slug,
+    title: a.title,
+    excerpt: a.excerpt,
+    category: a.category || 'Culture',
+    author: a.author_name || a.author_email,
+    date: a.published_at || a.created_at,
+    image: a.featured_image,
+    type: a.is_podcast_article ? ('podcast-article' as const) : ('article' as const),
+  };
+}
 
 const Home = () => {
-  const featuredArticles = [
-    {
-      id: '1',
-      title: 'Faith-Driven Leadership in Modern Business',
-      excerpt: 'Exploring how faith principles transform organizational culture and drive authentic leadership in today\'s corporate landscape.',
-      category: 'Leadership',
-      author: 'Marcus Thompson',
-      date: '2024-01-15',
-      image: null,
-      type: 'podcast-article' as const
-    },
-    {
-      id: '2',
-      title: 'Trauma-Informed Approaches to Community Building',
-      excerpt: 'Understanding the impact of collective trauma and creating healing spaces within urban communities.',
-      category: 'Trauma',
-      author: 'Dr. Sarah Williams',
-      date: '2024-01-14',
-      image: null,
-      type: 'article' as const
-    },
-    {
-      id: '3',
-      title: 'The Intersection of Faith and Mental Health',
-      excerpt: 'Breaking stigmas and building bridges between spiritual practices and mental wellness.',
-      category: 'Mental Health',
-      author: 'Rev. James Porter',
-      date: '2024-01-13',
-      image: null,
-      type: 'podcast-article' as const
-    },
-  ];
+  const [articles, setArticles] = useState<ArticleRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(3);
+      if (!error && data) setArticles(data as ArticleRow[]);
+      setLoading(false);
+    })();
+  }, []);
+
+  const featuredArticles = articles.map(toCardArticle);
 
   const brands = [
     {
@@ -138,6 +152,12 @@ const Home = () => {
             </Link>
           </div>
 
+          {loading && <p className="text-neutral-500">Loading latest stories…</p>}
+
+          {!loading && featuredArticles.length === 0 && (
+            <p className="text-neutral-500">No published articles yet — check back soon.</p>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredArticles.map((article) => (
               <ArticleCard key={article.id} article={article} />
@@ -154,13 +174,13 @@ const Home = () => {
               <h2 className="text-3xl font-bold mb-8">Why Partner with TUMN?</h2>
               <div className="space-y-6 text-lg text-neutral-700 leading-relaxed">
                 <p>
-                  Transform U Media Network serves as the digital headquarters for authentic, 
-                  faith-driven content that resonates with diverse audiences seeking transformation 
+                  Transform U Media Network serves as the digital headquarters for authentic,
+                  faith-driven content that resonates with diverse audiences seeking transformation
                   and purpose.
                 </p>
                 <p>
-                  Through our multi-brand ecosystem, we deliver news, podcasts, and editorial 
-                  content across faith, leadership, culture, and social impact—all optimized 
+                  Through our multi-brand ecosystem, we deliver news, podcasts, and editorial
+                  content across faith, leadership, culture, and social impact—all optimized
                   for maximum reach and engagement.
                 </p>
                 <div className="grid grid-cols-2 gap-6 mt-8">
@@ -202,7 +222,7 @@ const Home = () => {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold mb-6">Join Our Community</h2>
           <p className="text-xl text-neutral-300 mb-8">
-            Become a free member and contribute to the conversation. Share your insights, 
+            Become a free member and contribute to the conversation. Share your insights,
             submit guest posts, and connect with a community committed to transformation.
           </p>
           <Link
