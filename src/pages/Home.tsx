@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ArticleCard from '../components/ArticleCard';
+import AdSlot from '../components/AdSlot';
 import { supabase } from '../lib/supabase';
 
 interface ArticleRow {
@@ -111,9 +112,7 @@ const Home = () => {
       {/* Ad Zone - Below Hero */}
       <div className="bg-neutral-100 border-y border-neutral-300">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="text-center text-sm text-neutral-500">
-            [ Advertisement Space - 970x90 Billboard ]
-          </div>
+                    <AdSlot size="billboard" />
         </div>
       </div>
 
@@ -207,10 +206,7 @@ const Home = () => {
             {/* Sidebar Ad Zone */}
             <div className="lg:col-span-1">
               <div className="bg-white border-2 border-neutral-300 p-6 sticky top-24">
-                <div className="text-center text-sm text-neutral-500 mb-2">ADVERTISEMENT</div>
-                <div className="aspect-square bg-neutral-100 flex items-center justify-center text-neutral-400">
-                  [ 300x250 Sidebar Ad ]
-                </div>
+                          <AdSlot size="mediumRectangle" />
               </div>
             </div>
           </div>
