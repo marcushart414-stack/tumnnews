@@ -30,7 +30,22 @@ const ArticleDetail = () => {
   const [related, setRelated] = useState<ArticleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  useSEO(article?.title || 'Dispatch', article?.excerpt);
+  useSEO(article?.title || 'Dispatch', article?.excerpt, article ? {
+    image: article.featured_image || undefined,
+    path: `/article/${article.slug}`,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      headline: article.title,
+      description: article.excerpt,
+      image: article.featured_image ? [article.featured_image] : undefined,
+      datePublished: article.published_at || article.created_at,
+      dateModified: article.published_at || article.created_at,
+      author: { '@type': 'Person', name: article.author_name || article.author_email },
+      publisher: { '@type': 'Organization', name: 'Transform U Media Network' },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': `https://tumnnews.com/article/${article.slug}` },
+    },
+  } : undefined);
 
   useEffect(() => {
     if (!slug) return;
@@ -141,7 +156,7 @@ const ArticleDetail = () => {
                     </div>
                   ) : article.podcast_url ? (
                     <a href={article.podcast_url} target="_blank" rel="noopener noreferrer"
-                       className="block bg-neutral-900 text-white text-center py-4 font-bold hover:bg-black">
+                      className="block bg-neutral-900 text-white text-center py-4 font-bold hover:bg-black">
                       Listen on Podcast Platform →
                     </a>
                   ) : (
