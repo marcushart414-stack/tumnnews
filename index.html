@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transform U Media Network Corp.</title>
+<meta name="description" content="Transform U Media Network Corp. (TUMN) — parent company of Urban News Journal, The Transform U! Live Show, Warrior Mandate, and TUMN Academy.">
+<style>
+  :root{
+    --bg:#0a0a0c;
+    --fg:#efeef0;
+    --muted:#a8a6ac;
+    --accent:#ffbd59;
+    --line:#242229;
+    --card:#131217;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:64px 24px 40px;
+  }
+  .logo{
+    width:150px;
+    height:150px;
+    margin-bottom:8px;
+    border-radius:16px;
+  }
+  h1{
+    font-size:15px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:600;
+    margin:18px 0 0;
+  }
+  .brand{
+    font-size:42px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:2px 0 28px;
+    text-align:center;
+  }
+  .brand span{color:var(--accent);}
+  p.lede{
+    max-width:620px;
+    text-align:center;
+    color:var(--muted);
+    font-size:17px;
+    line-height:1.65;
+    margin:0 0 44px;
+  }
+  .links{
+    width:100%;
+    max-width:560px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  a.card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:20px 22px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    text-decoration:none;
+    color:var(--fg);
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  a.card:hover{
+    border-color:var(--accent);
+    transform:translateY(-1px);
+  }
+  a.card.disabled{
+    opacity:0.55;
+    pointer-events:none;
+  }
+  .card-title{
+    font-size:17px;
+    font-weight:700;
+  }
+  .card-sub{
+    font-size:13.5px;
+    color:var(--muted);
+    margin-top:3px;
+  }
+  .arrow{
+    font-size:20px;
+    color:var(--muted);
+    flex-shrink:0;
+  }
+  .badge{
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    background:#26232b;
+    color:var(--accent);
+    padding:3px 9px;
+    border-radius:999px;
+    font-weight:700;
+    flex-shrink:0;
+    margin-left:8px;
+  }
+  footer{
+    margin-top:56px;
+    color:#5f5c64;
+    font-size:12.5px;
+    text-align:center;
+    line-height:1.7;
+  }
+  footer a{color:#8b8890;}
+</style>
+</head>
+<body>
+
+  <img class="logo" src="logo-black.png" alt="Transform U Media Network logo">
+  <h1>Transform U Media Network Corp.</h1>
+  <div class="brand">The house behind <span>Transform U</span></div>
+
+  <p class="lede">
+    Transform U Media Network Corp. (TUMN) is the parent company behind Marcus Hart's
+    media, publishing, and creator-education ventures. TUMN itself doesn't publish content —
+    each property below is its own destination, built for its own audience. This page exists
+    so press, partners, and the curious can find their way to the right one.
+  </p>
+
+  <div class="links">
+    <a class="card" href="https://urbannewsjournal.com" target="_blank" rel="noopener">
+      <div>
+        <div class="card-title">Urban News Journal</div>
+        <div class="card-sub">News, culture, and commentary — daily digital publishing</div>
+      </div>
+      <div class="arrow">&#8594;</div>
+    </a>
+
+    <a class="card" href="#" target="_blank" rel="noopener">
+      <div>
+        <div class="card-title">The Transform U! Live Show</div>
+        <div class="card-sub">Weekly thought-leadership show — 400+ episodes since 2016</div>
+      </div>
+      <span class="badge">New site coming</span>
+    </a>
+
+    <a class="card" href="https://marcus-hart.com" target="_blank" rel="noopener">
+      <div>
+        <div class="card-title">Marcus Hart</div>
+        <div class="card-sub">Speaking, authorship, and Marcus's personal platform</div>
+      </div>
+      <div class="arrow">&#8594;</div>
+    </a>
+
+    <a class="card" href="https://warriormandate.substack.com" target="_blank" rel="noopener">
+      <div>
+        <div class="card-title">Warrior Mandate</div>
+        <div class="card-sub">Newsletter on mental health, money, and purpose for men</div>
+      </div>
+      <div class="arrow">&#8594;</div>
+    </a>
+
+    <a class="card disabled" href="#">
+      <div>
+        <div class="card-title">TUMN Academy</div>
+        <div class="card-sub">Media, journalism &amp; content-creator education — adult &amp; youth tracks</div>
+      </div>
+      <span class="badge">Coming soon</span>
+    </a>
+  </div>
+
+  <footer>
+    &copy; 2026 Transform U Media Network Corp. All rights reserved.<br>
+    Press &amp; partnership inquiries: <a href="mailto:press@marcus-hart.com">press@marcus-hart.com</a>
+  </footer>
+
+</body>
+</html>
